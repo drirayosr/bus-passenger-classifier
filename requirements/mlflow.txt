@@ -1,0 +1,4 @@
+# MLflow experiment tracking requirements
+-r base.txt
+
+mlflow>=2.9.0

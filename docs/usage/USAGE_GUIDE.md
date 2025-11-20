@@ -36,28 +36,40 @@ python --version
 
 ### Step 2: Install Dependencies
 
-**Option A: Install all at once**
+**Option A: Production setup (recommended)**
 ```powershell
-pip install -r requirements-core.txt
-pip install -r requirements-mlflow.txt
-pip install -r requirements-api.txt
-pip install -r requirements-dashboard.txt
-pip install -r requirements-test.txt
+pip install -r requirements.txt
+```
+This installs everything for production: base ML pipeline, MLflow tracking, and REST API.
+
+**Option B: Modular installation**
+```powershell
+# Core ML pipeline only
+pip install -r requirements/base.txt
+
+# Development environment (base + testing + code quality)
+pip install -r requirements/dev.txt
+
+# Production (base + MLflow + API)
+pip install -r requirements/prod.txt
+
+# Dashboard only
+pip install -r requirements/dashboard.txt
 ```
 
-**Option B: Install as needed**
+**Option C: Custom setup**
 ```powershell
-# Core ML (always required)
-pip install -r requirements-core.txt
+# Start with base
+pip install -r requirements/base.txt
 
-# Add MLflow for training
-pip install -r requirements-mlflow.txt
+# Add components as needed
+pip install -r requirements/mlflow.txt      # Experiment tracking
+pip install -r requirements/api.txt         # REST API
+pip install -r requirements/dashboard.txt   # Interactive dashboard
+pip install -r requirements/test.txt        # Testing tools
+```
 
-# Add API for serving
-pip install -r requirements-api.txt
-
-# Add dashboard for visualization
-pip install -r requirements-dashboard.txt
+See [requirements/README.md](../../requirements/README.md) for more options.
 
 # Add testing tools
 pip install -r requirements-test.txt

@@ -1,0 +1,21 @@
+# Base requirements for the ML pipeline
+# These are the core dependencies needed for model training and inference
+
+# Data manipulation
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Machine learning
+scikit-learn>=1.3.0
+hdbscan>=0.8.33
+
+# Geospatial calculations
+geopy>=2.4.0
+
+# Utilities
+pyyaml>=6.0
+joblib>=1.3.0
+
+# Visualization (optional but recommended)
+matplotlib>=3.7.0
+seaborn>=0.12.0

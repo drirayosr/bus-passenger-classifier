@@ -42,17 +42,18 @@ cd c:\Users\FX506\Desktop\Yosr_in_Copenhaguen_25-26\bus_miniproject
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 
-# 3. Install core dependencies (recommended)
-pip install -r requirements-core.txt
+# 3. Install dependencies
+pip install -r requirements.txt  # Production setup (API + MLflow + base)
+
+# Or install only what you need:
+pip install -r requirements/base.txt        # Core ML pipeline only
+pip install -r requirements/dev.txt         # Development tools
+pip install -r requirements/dashboard.txt   # Streamlit dashboard
 ```
 
-**Having installation issues?** See [INSTALLATION.md](INSTALLATION.md) for detailed troubleshooting.
+**Having installation issues?** See [docs/setup/INSTALLATION.md](docs/setup/INSTALLATION.md) for detailed troubleshooting.
 
-**Need more features?**
-- Dashboard: `pip install -r requirements-dashboard.txt`
-- MLflow: `pip install -r requirements-mlflow.txt`
-- FastAPI: `pip install -r requirements-api.txt`
-- Testing: `pip install -r requirements-test.txt`
+**More installation options:** See [requirements/README.md](requirements/README.md) for modular installation guide.
 
 ### Quick Usage
 
@@ -126,28 +127,33 @@ bus_miniproject/
 │   ├── test_data_validation.py # Data quality tests (19 tests)
 │   └── test_transformers.py    # Transformer tests
 ├── models/                      # Trained model artifacts
-│   ├── production_model.pkl     # Latest production model
-│   └── metrics.json             # Model performance metrics
+│   └── pipeline.joblib          # Latest production model
 ├── mlruns/                      # MLflow tracking data
 ├── reports/                     # Monitoring and drift reports
+├── requirements/                # Modular requirements structure
+│   ├── base.txt                 # Core ML dependencies
+│   ├── api.txt                  # FastAPI dependencies
+│   ├── dashboard.txt            # Streamlit dependencies
+│   ├── mlflow.txt               # MLflow dependencies
+│   ├── test.txt                 # Testing dependencies
+│   ├── dev.txt                  # Development tools
+│   ├── prod.txt                 # Production setup
+│   └── README.md                # Requirements documentation
+├── docs/                        # Comprehensive documentation
+│   ├── setup/                   # Installation guides
+│   ├── usage/                   # User guides
+│   ├── development/             # Architecture & roadmap
+│   └── archive/                 # Phase summaries
 ├── notebooks/
 │   └── AAU_Worshop_whosOnBus.ipynb  # Original research notebook
 ├── start_api.py                 # API launcher
 ├── start_dashboard.py           # Dashboard launcher
 ├── api_client_examples.py       # API usage examples
-├── requirements-core.txt        # Core dependencies
-├── requirements-dashboard.txt   # Dashboard dependencies
-├── requirements-mlflow.txt      # MLflow dependencies
-├── requirements-api.txt         # FastAPI dependencies
-├── requirements-test.txt        # Testing dependencies
 ├── passengers.csv               # Passenger GPS data (50,601 records)
 ├── bus.csv                      # Bus GPS data (53,155 records)
 ├── .dvc/                        # DVC configuration
 ├── .git/                        # Git repository
-├── README.md                    # This file
-├── MLOPS_ROADMAP.md            # MLOps implementation plan
-├── PHASE6_API_SUMMARY.md       # API documentation
-└── PHASE6.5_DASHBOARD_SUMMARY.md # Dashboard documentation
+└── README.md                    # This file
 ```
 
 ---
@@ -450,7 +456,10 @@ test: Add unit tests for SpeedTransformer
 
 ## 📖 Documentation
 
-- **[MLOPS_ROADMAP.md](MLOPS_ROADMAP.md)**: Detailed implementation plan
+- **[docs/setup/INSTALLATION.md](docs/setup/INSTALLATION.md)**: Detailed installation guide
+- **[docs/usage/USAGE_GUIDE.md](docs/usage/USAGE_GUIDE.md)**: Complete usage guide
+- **[docs/development/MLOPS_ROADMAP.md](docs/development/MLOPS_ROADMAP.md)**: Project architecture & roadmap
+- **[requirements/README.md](requirements/README.md)**: Requirements documentation
 - **[Notebook](notebooks/AAU_Worshop_whosOnBus.ipynb)**: Original research code
 - **Code docstrings**: Every function and class documented
 
@@ -484,15 +493,21 @@ This project is for educational purposes.
 
 ---
 
-## ⭐ Next Steps
+## ⭐ Project Status
 
-1. **Move existing CSV files** to `data/raw/`
-2. **Test transformers** with real data
-3. **Create pipeline builder** (`src/pipeline.py`)
-4. **Setup MLflow** for experiment tracking
-5. **Create training script** with full workflow
+✅ **All 7 MLOps phases complete!**
 
-See **[MLOPS_ROADMAP.md](MLOPS_ROADMAP.md)** for detailed next steps.
+This project includes:
+- ✅ Reproducible ML pipeline with custom transformers
+- ✅ MLflow experiment tracking & model registry
+- ✅ DVC for data versioning
+- ✅ REST API with FastAPI
+- ✅ Interactive Streamlit dashboard
+- ✅ Docker containerization
+- ✅ CI/CD with GitHub Actions
+- ✅ Comprehensive testing & documentation
+
+See **[docs/development/MLOPS_ROADMAP.md](docs/development/MLOPS_ROADMAP.md)** for full project architecture.
 
 ---
 

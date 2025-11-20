@@ -43,6 +43,7 @@ class PcaDBSCANTransformer(BaseEstimator, TransformerMixin):
         self.dbscan = dbscan
         self.scaler = StandardScaler()
         self.imputer = SimpleImputer(strategy='median')
+        self.feature_names_ = None  # Store feature names during fit
 
     def fit(self, X, y=None):
         """
@@ -57,6 +58,9 @@ class PcaDBSCANTransformer(BaseEstimator, TransformerMixin):
         """
         # Select only numerical columns
         X_numerical = X.select_dtypes(include=np.number)
+        
+        # Store the column names we're training on
+        self.feature_names_ = X_numerical.columns.tolist()
         
         # Handle NaNs before scaling and PCA
         X_imputed = self.imputer.fit_transform(X_numerical)
@@ -83,6 +87,26 @@ class PcaDBSCANTransformer(BaseEstimator, TransformerMixin):
         # Select only numerical columns
         out_numerical = out.select_dtypes(include=np.number)
         
+        # Ensure we have the same columns as during fit (if feature_names_ was stored)
+        # Backward compatibility: older models don't have feature_names_
+        if hasattr(self, 'feature_names_') and self.feature_names_ is not None:
+            # Add missing columns with NaN
+            for col in self.feature_names_:
+                if col not in out_numerical.columns:
+                    out_numerical[col] = np.nan
+            
+            # Select only the columns used during fit, in the same order
+            out_numerical = out_numerical[self.feature_names_]
+        elif hasattr(self.imputer, 'feature_names_in_'):
+            # Use imputer's stored feature names (from old models)
+            feature_names = self.imputer.feature_names_in_.tolist()
+            # Add missing columns with NaN
+            for col in feature_names:
+                if col not in out_numerical.columns:
+                    out_numerical[col] = np.nan
+            # Select only the columns used during fit, in the same order
+            out_numerical = out_numerical[feature_names]
+        
         # Handle NaNs
         X_imputed = self.imputer.transform(out_numerical)
         
@@ -91,7 +115,13 @@ class PcaDBSCANTransformer(BaseEstimator, TransformerMixin):
         X_pca = self.pca.transform(X_scaled)
         
         # Predict cluster labels
-        clusters = self.dbscan.fit_predict(X_pca)
+        # Handle single/small-point predictions (HDBSCAN needs sufficient points)
+        # For predictions with <10 points, classify all as noise/OUT (label = 0)
+        if len(X_pca) < 10:
+            # Too few points for meaningful clustering: classify as noise/OUT (label = 0)
+            clusters = np.full(len(X_pca), -1)
+        else:
+            clusters = self.dbscan.fit_predict(X_pca)
         
         # Map clusters to binary labels
         # Noise (-1) → OUT (0)

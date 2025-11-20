@@ -15,6 +15,7 @@ import numpy as np
 from typing import Optional, Dict, Any
 import io
 import sys
+import os
 from pathlib import Path
 
 # Add parent directory to path
@@ -71,7 +72,7 @@ def prepare_input_data(df: pd.DataFrame) -> pd.DataFrame:
         df: DataFrame with at least lat, lon, timestamp_utc
         
     Returns:
-        DataFrame with all required columns
+        DataFrame with all required columns in the correct order
     """
     # Make a copy to avoid modifying original
     df = df.copy()
@@ -80,33 +81,51 @@ def prepare_input_data(df: pd.DataFrame) -> pd.DataFrame:
     if 'timestamp_utc' in df.columns:
         df['timestamp_utc'] = pd.to_datetime(df['timestamp_utc'], utc=True)
     
-    # Add id and user_id if missing - these are critical!
+    # Add id if missing
     if 'id' not in df.columns:
         if 'user_id' in df.columns:
             df['id'] = df['user_id']
         else:
             df['id'] = range(len(df))
     
+    # Convert id to numeric (it was numeric during training)
+    # Use hash of string if it's a string, otherwise convert to int
+    if df['id'].dtype == 'object':
+        df['id'] = df['id'].apply(lambda x: hash(str(x)) % 1000000 if pd.notna(x) else 0)
+    df['id'] = pd.to_numeric(df['id'], errors='coerce').fillna(0).astype(int)
+    
+    # Add user_id as alias of id for the speed transformer (it needs user_id for groupby)
     if 'user_id' not in df.columns:
-        if 'id' in df.columns:
-            df['user_id'] = df['id']
-        else:
-            df['user_id'] = range(len(df))
+        df['user_id'] = df['id']
+    elif df['user_id'].dtype == 'object':
+        df['user_id'] = df['user_id'].apply(lambda x: hash(str(x)) % 1000000 if pd.notna(x) else 0)
+        df['user_id'] = pd.to_numeric(df['user_id'], errors='coerce').fillna(0).astype(int)
     
-    # Sensor and beacon columns (fill with NaN if missing)
-    sensor_cols = ['accx', 'accy', 'accz', 'rotx', 'roty', 'rotz', 
-                   'magx', 'magy', 'magz', 'stationary', 'walking', 'running', 
-                   'automotive', 'cycling', 'unknown', 'confidence',
-                   'x_web', 'y_web', 'rssiA', 'rssiB', 'rssiC', 'rssi1', 'rssi2', 
-                   'proxA', 'proxB', 'proxC', 'prox1', 'prox2', 'labelEnc', 'labelEnc2']
+    # ALL sensor and beacon columns that the model expects
+    # These are the columns the PCA imputer was fitted on (minus the computed features)
+    required_numerical_cols = [
+        'id', 'lat', 'lon', 'speed', 
+        'accx', 'accy', 'accz', 'rotx', 'roty', 'rotz',
+        'magx', 'magy', 'magz', 'stationary', 'walking', 'running',
+        'automotive', 'cycling', 'unknown', 'confidence',
+        'x_web', 'y_web', 'rssiA', 'rssiB', 'rssiC', 'rssi1', 'rssi2',
+        'proxA', 'proxB', 'proxC', 'prox1', 'prox2',
+        'labelEnc', 'labelEnc2', 'user_id'
+        # Note: speed_mps_computed, acceleration_mps2_computed, bearing_rate_variation_rad_per_s2_computed,
+        # distance_to_Stop_*, distance_to_bus_* are added by the pipeline transformers
+    ]
     
-    for col in sensor_cols:
+    # Add missing numerical columns with NaN
+    for col in required_numerical_cols:
         if col not in df.columns:
             df[col] = np.nan
     
-    # Ensure speed column exists
-    if 'speed' not in df.columns:
-        df['speed'] = np.nan
+    # Ensure all numerical columns are numeric type
+    for col in required_numerical_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+    
+    return df
     
     return df
 
@@ -125,39 +144,56 @@ async def startup_event():
         config = load_config()
         print("[OK] Configuration loaded")
         
-        # Load production model
-        registry = ModelRegistry()
-        model = registry.load_production_model("bus-passenger-classifier")
+        # Check if we should use local model (for Docker)
+        use_local_model = os.getenv("USE_LOCAL_MODEL", "false").lower() == "true"
+        local_model_path = os.getenv("LOCAL_MODEL_PATH", "models/pipeline.joblib")
         
-        if model is None:
-            print("[WARNING] No production model found! API will run in limited mode.")
+        if use_local_model and Path(local_model_path).exists():
+            print(f"[*] Loading local model from: {local_model_path}")
+            import joblib
+            model = joblib.load(local_model_path)
             model_info = {
                 "model_name": "bus-passenger-classifier",
-                "version": "N/A",
-                "stage": "None",
-                "status": "NOT_LOADED"
+                "version": "local",
+                "stage": "Production",
+                "status": "LOADED",
+                "source": local_model_path
             }
+            print(f"[OK] Local model loaded successfully")
         else:
-            # Get model info
-            model_version = registry.get_model_info("bus-passenger-classifier", stage="Production")
+            # Load production model from MLflow registry
+            registry = ModelRegistry()
+            model = registry.load_production_model("bus-passenger-classifier")
             
-            if model_version:
-                model_info = {
-                    "model_name": model_version.name,
-                    "version": str(model_version.version),
-                    "stage": model_version.current_stage,
-                    "status": model_version.status,
-                    "run_id": model_version.run_id
-                }
-                print(f"[OK] Production model loaded: v{model_info['version']}")
-            else:
+            if model is None:
+                print("[WARNING] No production model found! API will run in limited mode.")
                 model_info = {
                     "model_name": "bus-passenger-classifier",
-                    "version": "Unknown",
-                    "stage": "Production",
-                    "status": "LOADED"
+                    "version": "N/A",
+                    "stage": "None",
+                    "status": "NOT_LOADED"
                 }
-                print("[OK] Model loaded (info unavailable)")
+            else:
+                # Get model info
+                model_version = registry.get_model_info("bus-passenger-classifier", stage="Production")
+                
+                if model_version:
+                    model_info = {
+                        "model_name": model_version.name,
+                        "version": str(model_version.version),
+                        "stage": model_version.current_stage,
+                        "status": model_version.status,
+                        "run_id": model_version.run_id
+                    }
+                    print(f"[OK] Production model loaded: v{model_info['version']}")
+                else:
+                    model_info = {
+                        "model_name": "bus-passenger-classifier",
+                        "version": "Unknown",
+                        "stage": "Production",
+                        "status": "LOADED"
+                    }
+                    print("[OK] Model loaded (info unavailable)")
         
         print("=" * 60)
         print(f"API ready at http://localhost:8000")

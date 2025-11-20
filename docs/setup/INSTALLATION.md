@@ -23,17 +23,38 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 python -m pip install --upgrade pip
 ```
 
-### Step 4: Install Core Dependencies (Recommended)
+### Step 4: Install Dependencies
+
+**Option A: Production setup (recommended)**
 ```powershell
-pip install -r requirements-core.txt
+pip install -r requirements.txt
+```
+This installs everything needed for production: base ML pipeline, MLflow tracking, and REST API.
+
+**Option B: Install only what you need**
+```powershell
+# Core ML pipeline only
+pip install -r requirements/base.txt
+
+# Development environment (includes testing & code quality tools)
+pip install -r requirements/dev.txt
+
+# Dashboard only
+pip install -r requirements/dashboard.txt
 ```
 
-This installs only the essential packages:
-- pandas, numpy, scikit-learn
-- hdbscan (clustering)
-- geopy (geospatial calculations)
-- matplotlib, seaborn (visualization)
-- pyyaml, joblib (utilities)
+**Option C: Custom setup**
+```powershell
+# Base + MLflow + API (production)
+pip install -r requirements/prod.txt
+
+# Base + specific components
+pip install -r requirements/base.txt
+pip install -r requirements/mlflow.txt  # Adds MLflow tracking
+pip install -r requirements/api.txt     # Adds FastAPI
+```
+
+See [requirements/README.md](../../requirements/README.md) for full documentation.
 
 ### Step 5: Test Installation
 ```powershell
@@ -47,17 +68,17 @@ python src/utils.py
 
 ### Install MLflow (for experiment tracking)
 ```powershell
-pip install -r requirements-mlflow.txt
+pip install -r requirements/mlflow.txt
 ```
 
 ### Install FastAPI (for API serving)
 ```powershell
-pip install -r requirements-api.txt
+pip install -r requirements/api.txt
 ```
 
 ### Install Testing Tools
 ```powershell
-pip install -r requirements-test.txt
+pip install -r requirements/test.txt
 ```
 
 ---

@@ -1,0 +1,21 @@
+# Production environment - all required dependencies
+# This includes everything needed to run the complete MLOps pipeline
+
+# Base ML pipeline
+-r base.txt
+
+# MLflow for experiment tracking and model registry
+-r mlflow.txt
+
+# REST API for predictions
+-r api.txt
+
+# Optional: Dashboard (comment out if not needed)
+# -r dashboard.txt
+
+# Data versioning (install separately: pip install dvc)
+# dvc>=3.30.0
+# dvc-gdrive>=3.0.0  # If using Google Drive for DVC remote
+
+# Monitoring (optional)
+# prometheus-client>=0.19.0

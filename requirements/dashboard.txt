@@ -1,4 +1,6 @@
-# Dashboard Dependencies
+# Interactive dashboard requirements
+-r base.txt
+
 streamlit>=1.28.0
 plotly>=5.17.0
 folium>=0.14.0
