@@ -1,0 +1,5 @@
+outs:
+- md5: 6c38bb293ce93186a5e170fcd67f0a22
+  size: 25387384
+  hash: md5
+  path: passengers.csv
