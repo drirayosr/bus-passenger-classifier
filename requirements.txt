@@ -1,0 +1,62 @@
+# ============================================
+# CORE REQUIREMENTS (Essential for pipeline)
+# ============================================
+
+# Core ML libraries
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+hdbscan>=0.8.33
+
+# Geospatial calculations
+geopy>=2.4.0
+
+# Visualization (basic)
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Utilities
+pyyaml>=6.0
+joblib>=1.3.0
+
+
+# ============================================
+# MLOPS TOOLS (Install separately as needed)
+# ============================================
+
+# Experiment tracking
+# mlflow>=2.9.0
+
+# Data versioning
+# dvc>=3.30.0
+# dvc-gdrive>=3.0.0
+
+# Data validation
+# great-expectations>=0.18.0
+
+# API serving
+# fastapi>=0.100.0
+# uvicorn>=0.25.0
+# pydantic>=2.5.0
+# python-multipart>=0.0.6
+
+# Monitoring
+# evidently>=0.4.0
+# prometheus-client>=0.19.0
+
+# Workflow orchestration
+# apache-airflow>=2.8.0
+
+# Testing
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
+# httpx>=0.26.0
+
+# Code quality
+# flake8>=7.0.0
+# black>=23.0.0
+# isort>=5.13.0
+# pre-commit>=3.6.0
+
+# Other utilities
+# python-dotenv>=1.0.0

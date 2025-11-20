@@ -1,0 +1,50 @@
+schema: '2.0'
+stages:
+  train:
+    cmd: python -m src.train
+    deps:
+    - path: config/config.yaml
+      hash: md5
+      md5: 8542e5b469611198820d58614049de05
+      size: 2121
+    - path: data/raw/bus.csv
+      hash: md5
+      md5: b88423ea8c5dcf814e26a2624914ec19
+      size: 14488240
+    - path: data/raw/passengers.csv
+      hash: md5
+      md5: 6c38bb293ce93186a5e170fcd67f0a22
+      size: 25387384
+    - path: src/data_loader.py
+      hash: md5
+      md5: 01cd5ac98ab2c86c8a4f06cdc66c21ab
+      size: 9026
+    - path: src/pipeline.py
+      hash: md5
+      md5: adac047bdc23daaaac2c50819f20dc09
+      size: 4827
+    - path: src/train.py
+      hash: md5
+      md5: 43b7ae633276e1e46ea8fb7bd6e2f2e2
+      size: 7555
+    - path: src/transformers/
+      hash: md5
+      md5: 6a1281e62817b0017612e674639f0348.dir
+      size: 102876
+      nfiles: 21
+    params:
+      config/config.yaml:
+        feature_engineering.hdbscan_cluster_selection_epsilon: 0.5
+        feature_engineering.hdbscan_min_cluster_size: 300
+        feature_engineering.pca_n_components: 4
+        preprocessing.aoi_buffer_m: 50
+        preprocessing.speed_limit_kmh: 35
+    outs:
+    - path: models/metrics.json
+      hash: md5
+      md5: c7d03fb00a3cbddf3fd7a4f606c62dae
+      size: 225
+    - path: models/pipeline.joblib
+      hash: md5
+      md5: 47d659d44d7ede1faa7c98d1cc4b389d
+      size: 11966883

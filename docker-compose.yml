@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # FastAPI Application
+  api:
+    build: .
+    container_name: bus-classifier-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./mlruns:/app/mlruns
+      - ./models:/app/models
+      - ./config:/app/config
+    environment:
+      - MLFLOW_TRACKING_URI=mlruns
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # MLflow UI (Optional)
+  mlflow:
+    image: python:3.11-slim
+    container_name: bus-classifier-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    command: >
+      sh -c "pip install mlflow &&
+             mlflow ui --host 0.0.0.0 --port 5000 --backend-store-uri /mlruns"
+    restart: unless-stopped
+
+networks:
+  default:
+    name: bus-classifier-network

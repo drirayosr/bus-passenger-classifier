@@ -1,0 +1,86 @@
+# MLOps Configuration for Bus Passenger Classification
+# All hyperparameters and settings in one place
+
+data:
+  passengers_path: "data/raw/passengers.csv"
+  bus_path: "data/raw/bus.csv"
+  processed_output: "data/processed/"
+  reference_data: "data/reference/baseline.csv"
+
+preprocessing:
+  # Area of Interest (AOI) buffer around bus route in meters
+  aoi_buffer_m: 50
+  
+  # Speed filtering
+  speed_limit_kmh: 35
+  max_speed_mps: 9.72  # 35 km/h = 9.72 m/s
+  
+  # Time tolerance for GPS alignment between bus and phones
+  bus_time_tolerance: "60s"
+
+feature_engineering:
+  # PCA dimensionality reduction
+  pca_n_components: 4
+  
+  # DBSCAN for bus stop detection
+  dbscan_eps: 0.0001
+  dbscan_min_samples: 5
+  
+  # HDBSCAN for passenger classification (optimized via tuning - F1=0.6149)
+  hdbscan_min_cluster_size: 300
+  hdbscan_min_samples: null  # null = auto (uses min_cluster_size)
+  hdbscan_cluster_selection_epsilon: 0.5  # allows smaller clusters near large ones
+  hdbscan_cluster_selection_method: 'eom'  # 'eom' or 'leaf'
+  
+  # Bus stop coordinates (detected from notebook)
+  # These will be calculated dynamically but can be overridden
+  bus_stops:
+    stop_a:
+      lat: 55.7923
+      lon: 12.5231
+      label: "Stop A"
+    stop_b:
+      lat: 55.7924
+      lon: 12.5232
+      label: "Stop B"
+    stop_c:
+      lat: 55.7925
+      lon: 12.5233
+      label: "Stop C"
+
+model:
+  test_size: 0.2
+  random_state: 42
+  validation_split: 0.2
+
+mlflow:
+  experiment_name: "bus_passenger_classification"
+  tracking_uri: "http://localhost:5000"
+  registered_model_name: "BusPassengerClassifier"
+
+monitoring:
+  # Drift detection thresholds
+  drift_threshold: 0.3
+  
+  # Performance thresholds
+  min_f1_score: 0.65
+  
+  # Check frequency
+  check_interval_hours: 6
+  
+  # Alert settings
+  send_alerts: true
+  alert_channels:
+    - email
+    - slack
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  reload: false
+  max_upload_size_mb: 50
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/app.log"

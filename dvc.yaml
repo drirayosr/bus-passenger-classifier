@@ -1,0 +1,23 @@
+stages:
+  train:
+    cmd: python -m src.train
+    deps:
+      - data/raw/passengers.csv
+      - data/raw/bus.csv
+      - src/train.py
+      - src/pipeline.py
+      - src/data_loader.py
+      - src/transformers/
+      - config/config.yaml
+    params:
+      - config/config.yaml:
+          - preprocessing.aoi_buffer_m
+          - preprocessing.speed_limit_kmh
+          - feature_engineering.pca_n_components
+          - feature_engineering.hdbscan_min_cluster_size
+          - feature_engineering.hdbscan_cluster_selection_epsilon
+    outs:
+      - models/pipeline.joblib
+    metrics:
+      - models/metrics.json:
+          cache: false
