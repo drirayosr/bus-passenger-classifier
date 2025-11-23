@@ -8,14 +8,6 @@
 
 ## 📋 Executive Summary
 
-### Current State
-- ✅ Working Jupyter notebook with complete analysis
-- ✅ Custom sklearn transformers for feature engineering
-- ✅ HDBSCAN clustering model with ~70%+ F1-score
-- ❌ Hardcoded parameters scattered across 118 cells
-- ❌ No experiment tracking or versioning
-- ❌ No automated pipeline or API
-
 ### Target State
 Production-ready ML system with:
 - Parameterized configuration
@@ -671,7 +663,7 @@ docker --version
 ### Quick Start
 ```bash
 # 1. Clone repository
-cd c:\Users\FX506\Desktop\Yosr_in_Copenhaguen_25-26\bus_miniproject
+cd c:\..\bus_miniproject
 
 # 2. Create virtual environment
 python -m venv venv
