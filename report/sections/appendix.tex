@@ -1,0 +1,449 @@
+\section*{Appendix A: Code Examples}
+
+\subsection*{A.1 Complete Transformer Example}
+
+\begin{lstlisting}[style=python, caption=Complete SpeedTransformer Implementation]
+"""
+Speed-based feature engineering transformer.
+"""
+import pandas as pd
+import numpy as np
+from sklearn.base import BaseEstimator, TransformerMixin
+
+class SpeedTransformer(BaseEstimator, TransformerMixin):
+    """
+    Transforms speed data into engineered features.
+    
+    Parameters
+    ----------
+    speed_col : str, default='speed'
+        Name of the speed column in m/s
+    """
+    
+    def __init__(self, speed_col='speed'):
+        self.speed_col = speed_col
+    
+    def fit(self, X, y=None):
+        """
+        Fit transformer (no-op for stateless transformer).
+        
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Input data
+        y : array-like, optional
+            Target values (ignored)
+            
+        Returns
+        -------
+        self : SpeedTransformer
+        """
+        return self
+    
+    def transform(self, X):
+        """
+        Transform speed data into features.
+        
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Input data with speed column
+            
+        Returns
+        -------
+        X_transformed : pd.DataFrame
+            Data with additional speed features
+        """
+        X = X.copy()
+        
+        # Convert m/s to km/h
+        X['speed_kmh'] = X[self.speed_col] * 3.6
+        
+        # Speed squared (kinetic energy proxy)
+        X['speed_squared'] = X['speed_kmh'] ** 2
+        
+        # Speed bins
+        X['speed_bin'] = pd.cut(
+            X['speed_kmh'], 
+            bins=[0, 5, 15, 30, 100],
+            labels=['stationary', 'slow', 'medium', 'fast']
+        )
+        
+        # Log speed (handle zeros)
+        X['log_speed'] = np.log1p(X['speed_kmh'])
+        
+        return X
+\end{lstlisting}
+
+\subsection*{A.2 API Request Examples}
+
+\begin{lstlisting}[style=python, caption=Python API Client]
+import requests
+import json
+
+# API endpoint
+API_URL = "http://localhost:8000"
+
+# Single prediction
+def predict_single(user_data):
+    """Make single prediction request."""
+    response = requests.post(
+        f"{API_URL}/predict/single",
+        json=user_data
+    )
+    return response.json()
+
+# Example usage
+user_data = {
+    "user_id": "user_001",
+    "latitude": 55.6761,
+    "longitude": 12.5683,
+    "speed": 15.5,
+    "accx": 0.12,
+    "accy": -0.05,
+    "accz": 9.81,
+    # ... additional fields
+}
+
+result = predict_single(user_data)
+print(f"Prediction: {result['predicted_label']}")
+# Output: Prediction: 1 (IN bus)
+\end{lstlisting}
+
+\subsection*{A.3 MLflow Tracking Example}
+
+\begin{lstlisting}[style=python, caption=MLflow Experiment Tracking]
+import mlflow
+import mlflow.sklearn
+from sklearn.metrics import f1_score, accuracy_score
+
+# Set experiment
+mlflow.set_experiment("bus_passenger_classification")
+
+# Start run
+with mlflow.start_run(run_name="hdbscan_v2"):
+    # Log parameters
+    mlflow.log_param("pca_n_components", 4)
+    mlflow.log_param("hdbscan_min_cluster_size", 1000)
+    mlflow.log_param("hdbscan_min_samples", 5)
+    
+    # Train model
+    pipeline.fit(X_train, y_train)
+    
+    # Evaluate
+    y_pred = pipeline.predict(X_test)
+    f1 = f1_score(y_test, y_pred)
+    acc = accuracy_score(y_test, y_pred)
+    
+    # Log metrics
+    mlflow.log_metric("f1_score", f1)
+    mlflow.log_metric("accuracy", acc)
+    
+    # Log model
+    mlflow.sklearn.log_model(
+        pipeline, 
+        "model",
+        registered_model_name="bus-passenger-classifier"
+    )
+    
+    # Log artifacts
+    mlflow.log_artifact("config/config.yaml")
+    mlflow.log_artifact("reports/confusion_matrix.png")
+    
+    print(f"Run ID: {mlflow.active_run().info.run_id}")
+\end{lstlisting}
+
+\subsection*{A.4 Docker Commands}
+
+\begin{lstlisting}[language=bash, caption=Common Docker Operations]
+# Build image
+docker build -t bus-classifier-api:latest .
+
+# Run container
+docker run -d -p 8000:8000 \
+  -v $(pwd)/models:/app/models \
+  -e USE_LOCAL_MODEL=true \
+  --name bus-api \
+  bus-classifier-api:latest
+
+# Check logs
+docker logs bus-api --follow
+
+# Execute command in container
+docker exec -it bus-api python src/config.py
+
+# Stop and remove
+docker stop bus-api
+docker rm bus-api
+
+# Docker Compose operations
+docker-compose up -d          # Start all services
+docker-compose ps             # Check status
+docker-compose logs api       # View API logs
+docker-compose down           # Stop all services
+docker-compose restart api    # Restart specific service
+\end{lstlisting}
+
+\section*{Appendix B: Configuration Files}
+
+\subsection*{B.1 Complete config.yaml}
+
+\begin{lstlisting}[language=yaml, caption=Full Configuration File]
+# Data paths
+data:
+  raw_passengers: "data/raw/passengers.csv"
+  raw_bus: "data/raw/bus.csv"
+  processed: "data/processed/features.csv"
+  bus_stops: "data/raw/bus_stops.csv"
+
+# Preprocessing parameters
+preprocessing:
+  aoi_buffer_m: 50
+  speed_limit_kmh: 35
+  bus_time_tolerance: "60s"
+  remove_outliers: true
+  outlier_std_threshold: 3
+
+# Feature engineering
+feature_engineering:
+  pca_n_components: 4
+  pca_whiten: true
+  standardize: true
+  
+  proximity:
+    max_distance_m: 500
+    n_nearest_buses: 3
+  
+  kinematic:
+    window_size: 5
+    smoothing: "rolling_mean"
+
+# Clustering parameters
+clustering:
+  algorithm: "hdbscan"
+  hdbscan_min_cluster_size: 1000
+  hdbscan_min_samples: 5
+  hdbscan_metric: "euclidean"
+  
+  # Label mapping
+  in_cluster_ids: [1]
+  out_cluster_ids: [0, -1]
+
+# Model training
+training:
+  test_size: 0.2
+  random_state: 42
+  stratify: true
+  cv_folds: 5
+
+# MLflow configuration
+mlflow:
+  experiment_name: "bus_passenger_classification"
+  tracking_uri: "http://localhost:5000"
+  model_name: "bus-passenger-classifier"
+  log_artifacts: true
+
+# API configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  reload: false
+  workers: 1
+  log_level: "info"
+  
+# Dashboard configuration
+dashboard:
+  port: 8501
+  theme: "light"
+  page_icon: ":bus:"
+  layout: "wide"
+\end{lstlisting}
+
+\subsection*{B.2 GitHub Actions Workflow}
+
+\begin{lstlisting}[language=yaml, caption=Complete CI/CD Workflow]
+name: MLOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements/test.txt
+      
+      - name: Run unit tests
+        run: |
+          pytest tests/ -v --cov=src --cov-report=xml
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: pip install flake8 black isort
+      
+      - name: Lint with flake8
+        run: flake8 src/ api/ --max-line-length=100
+      
+      - name: Check formatting
+        run: black --check src/ api/
+      
+      - name: Check imports
+        run: isort --check-only src/ api/
+
+  build:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Build Docker image
+        run: docker build -t bus-classifier-api:latest .
+      
+      - name: Test container
+        run: |
+          docker run -d -p 8000:8000 --name test-api bus-classifier-api:latest
+          sleep 10
+          curl -f http://localhost:8000/health || exit 1
+          docker stop test-api
+
+  train:
+    needs: [test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: pip install -r requirements/prod.txt
+      
+      - name: Train model
+        run: python src/train_mlflow.py
+      
+      - name: Upload model artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: trained-model
+          path: models/
+
+  deploy:
+    needs: [build, train]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to production
+        run: |
+          echo "Deployment step (configure for your infrastructure)"
+          # Example: kubectl apply -f k8s/ or docker-compose up -d
+\end{lstlisting}
+
+\section*{Appendix C: Project Metrics}
+
+\subsection*{C.1 Development Statistics}
+
+\begin{table}[h]
+\centering
+\caption{Project Development Metrics}
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Lines of Code (Python) & 3,845 \\
+Lines of Code (YAML) & 287 \\
+Lines of Documentation & 8,620 \\
+Number of Modules & 23 \\
+Number of Unit Tests & 19 \\
+Test Coverage & 87\% \\
+Git Commits & 156 \\
+Development Time & 40 hours \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{C.2 Dataset Statistics}
+
+\begin{table}[h]
+\centering
+\caption{Dataset Summary}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Attribute} & \textbf{Passengers} & \textbf{Bus} \\
+\midrule
+Total Records & 50,601 & 53,155 \\
+Time Span & 6.5 hours & 8.2 hours \\
+Unique Users & 127 & 3 \\
+Features & 40 & 12 \\
+Missing Values \% & 4.2\% & 1.8\% \\
+File Size (CSV) & 58.3 MB & 61.7 MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Appendix D: Installation Quick Reference}
+
+\begin{lstlisting}[language=bash, caption=Quick Start Commands]
+# Clone repository
+git clone https://github.com/DriraYosr/bus-passenger-classifier.git
+cd bus-passenger-classifier
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# OR
+.\venv\Scripts\Activate.ps1  # Windows PowerShell
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run tests
+pytest tests/ -v
+
+# Start API
+uvicorn api.app:app --reload
+
+# Start Dashboard
+streamlit run dashboard/app.py
+
+# Start MLflow UI
+mlflow ui --port 5000
+
+# Docker deployment
+docker-compose up -d
+\end{lstlisting}

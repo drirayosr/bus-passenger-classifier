@@ -1,0 +1,74 @@
+\section{Background and Related Work}
+
+\subsection{Machine Learning Operations (MLOps)}
+
+MLOps is an emerging discipline that combines machine learning, software engineering, and DevOps practices to streamline the development, deployment, and maintenance of ML systems in production \cite{sculley2015hidden}. Key principles include:
+
+\subsubsection{Reproducibility}
+Every aspect of the ML pipeline—data, code, configurations, and environment—must be version-controlled to ensure consistent results across different executions and environments.
+
+\subsubsection{Automation}
+Manual processes introduce errors and inefficiency. Automated pipelines for training, testing, and deployment reduce human intervention and accelerate iteration cycles.
+
+\subsubsection{Monitoring}
+Production models require continuous monitoring for data drift, model degradation, and system performance to maintain reliability over time.
+
+\subsubsection{Collaboration}
+ML projects involve data scientists, ML engineers, and DevOps teams. Proper tooling and workflows facilitate collaboration and knowledge sharing.
+
+\subsection{MLOps Tools and Frameworks}
+
+\subsubsection{DVC (Data Version Control)}
+DVC extends Git's version control capabilities to large datasets and models. It tracks data changes, enables reproducible pipelines, and integrates with remote storage \cite{dvc2020}.
+
+\subsubsection{MLflow}
+MLflow is an open-source platform for managing the ML lifecycle, including experiment tracking, reproducible runs, and model deployment \cite{zaharia2018mlflow}. Its key components are:
+\begin{itemize}
+    \item \textbf{Tracking}: Logs parameters, metrics, and artifacts
+    \item \textbf{Projects}: Packages code in reusable format
+    \item \textbf{Models}: Standardized format for packaging models
+    \item \textbf{Registry}: Central repository for model versioning
+\end{itemize}
+
+\subsubsection{FastAPI}
+FastAPI is a modern Python web framework optimized for building APIs with automatic validation, documentation, and high performance \cite{fastapi2021}. It leverages Python type hints and Pydantic for data validation.
+
+\subsubsection{Docker and Containerization}
+Containerization ensures consistent runtime environments across development, testing, and production. Docker packages applications with all dependencies, eliminating "works on my machine" problems \cite{merkel2014docker}.
+
+\subsection{Geospatial Machine Learning}
+
+Geospatial ML involves analyzing data with geographic coordinates. Common techniques include:
+
+\begin{itemize}
+    \item \textbf{Distance calculations}: Haversine formula for GPS coordinates
+    \item \textbf{Trajectory analysis}: Speed, acceleration, bearing from GPS traces
+    \item \textbf{Proximity features}: Distance to points of interest (bus stops, buses)
+    \item \textbf{Spatial clustering}: Grouping geographic patterns (DBSCAN, HDBSCAN)
+\end{itemize}
+
+\subsection{Clustering Algorithms}
+
+\subsubsection{DBSCAN}
+Density-Based Spatial Clustering of Applications with Noise (DBSCAN) groups points based on density, identifying clusters of arbitrary shape and marking outliers as noise \cite{ester1996density}.
+
+\subsubsection{HDBSCAN}
+Hierarchical DBSCAN extends DBSCAN by constructing a cluster hierarchy and extracting optimal clusters at varying density levels \cite{campello2013density}. Advantages include:
+\begin{itemize}
+    \item No need to specify number of clusters
+    \item Automatic noise detection
+    \item Handles varying density clusters
+    \item More robust parameter selection
+\end{itemize}
+
+\subsection{Related Work}
+
+Transportation behavior classification using smartphone sensors has been explored in various contexts:
+
+\begin{itemize}
+    \item \textbf{Mode detection}: Identifying transportation modes (walking, bus, train) using accelerometer and GPS \cite{stenneth2011transportation}
+    \item \textbf{Activity recognition}: Classifying user activities from sensor fusion \cite{shoaib2014survey}
+    \item \textbf{Bus ridership}: Estimating passenger counts using Wi-Fi and Bluetooth signals \cite{kostakos2009brief}
+\end{itemize}
+
+However, few works focus on the complete MLOps lifecycle for such systems, making this project a comprehensive case study in production ML engineering.

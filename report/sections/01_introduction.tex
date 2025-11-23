@@ -1,0 +1,55 @@
+\section{Introduction}
+
+\subsection{Motivation}
+
+Public transportation systems generate vast amounts of geospatial data through GPS-enabled devices on buses and passenger smartphones. Understanding passenger behavior patterns, particularly whether a passenger is inside or outside a bus, has significant applications in:
+
+\begin{itemize}
+    \item \textbf{Transit optimization}: Real-time passenger counting for capacity management
+    \item \textbf{User experience}: Personalized mobile applications with context-aware notifications
+    \item \textbf{Analytics}: Understanding boarding/alighting patterns for route planning
+    \item \textbf{Safety}: Detecting anomalous behaviors or emergency situations
+\end{itemize}
+
+However, deploying machine learning models for such applications requires more than just achieving good accuracy. Production systems must be \textit{reproducible}, \textit{maintainable}, \textit{scalable}, and \textit{continuously monitored}—core principles of Machine Learning Operations (MLOps).
+
+\subsection{Problem Statement}
+
+Given GPS trajectory data from:
+\begin{itemize}
+    \item \textbf{Bus vehicles}: Position coordinates, speed, door state, timestamps (53,155 records)
+    \item \textbf{Passenger smartphones}: Position coordinates, speed, accelerometer data, proximity sensors, timestamps (50,601 records)
+\end{itemize}
+
+The objective is to classify whether a passenger is \textit{inside} (label = 1) or \textit{outside} (label = 0) a bus at any given timestamp, using an unsupervised learning approach with proper MLOps practices.
+
+\subsection{Project Scope}
+
+This project implements a complete 7-phase MLOps pipeline:
+
+\begin{enumerate}
+    \item \textbf{Phase 1-2}: Reproducible ML pipeline with custom transformers
+    \item \textbf{Phase 3}: Data version control (DVC)
+    \item \textbf{Phase 4}: Model validation and metrics tracking
+    \item \textbf{Phase 5}: MLflow experiment tracking and model registry
+    \item \textbf{Phase 6}: REST API deployment with FastAPI
+    \item \textbf{Phase 6.5}: Interactive dashboard with Streamlit
+    \item \textbf{Phase 7}: CI/CD pipeline with GitHub Actions and Docker
+\end{enumerate}
+
+\subsection{Contributions}
+
+The main contributions of this work include:
+
+\begin{itemize}
+    \item A fully reproducible geospatial ML pipeline with modular custom transformers
+    \item Unsupervised classification using HDBSCAN clustering on engineered features
+    \item Production-ready REST API with comprehensive error handling and validation
+    \item Interactive dashboard for model monitoring and data exploration
+    \item Complete CI/CD pipeline with automated testing and deployment
+    \item Comprehensive documentation following software engineering best practices
+\end{itemize}
+
+\subsection{Report Structure}
+
+The remainder of this report is organized as follows: Section 2 provides background on MLOps principles and related work. Section 3 describes the methodology including feature engineering and clustering approach. Section 4 details the implementation of each pipeline component. Section 5 presents experimental results and model performance. Section 6 discusses deployment architecture and DevOps practices. Finally, Section 7 concludes with lessons learned and future work.

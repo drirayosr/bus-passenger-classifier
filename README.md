@@ -265,7 +265,7 @@ Edit this file to change any parameter without modifying code.
 - [x] Data exploration tools
 - [x] API monitoring
 
-### 📅 Future Enhancements (Optional)
+### 📅 Phase 7: CI/CD
 - [ ] CI/CD pipeline (GitHub Actions)
 - [ ] Advanced monitoring (Evidently AI)
 - [ ] Orchestration (Apache Airflow)
@@ -390,6 +390,41 @@ print(response.json())
 
 ## 🛠️ Development Workflow
 
+### Orchestration with Prefect 🔄
+
+**Automated workflows for training, predictions, and monitoring**
+
+```powershell
+# Install Prefect
+pip install -r requirements/orchestration.txt
+
+# Quick test (runs all workflows once)
+python test_prefect.py
+
+# Or run workflows manually:
+python workflows.py train    # Model training
+python workflows.py predict  # Batch predictions
+python workflows.py monitor  # Drift detection
+```
+
+**Automated Scheduling:**
+```powershell
+# Start Prefect server (in separate terminal)
+prefect server start  # Opens at http://localhost:4200
+
+# Deploy workflows with schedules
+python deploy_workflows.py
+```
+
+**Scheduled Workflows:**
+- 🗓️ **Weekly Training**: Every Sunday at 2 AM (Europe/Copenhagen)
+- 📊 **Daily Predictions**: Every day at 8 AM
+- 🔍 **Monitoring**: Every 6 hours (auto-retrains if drift detected)
+
+📖 **Full Guide**: See [PREFECT_GUIDE.md](PREFECT_GUIDE.md)
+
+---
+
 ### Adding a New Feature
 
 1. **Update config.yaml** with new parameters
@@ -430,6 +465,7 @@ python src/train.py --config config/config.yaml
 | **Maps** | Folium | Geographic visualization |
 | **Testing** | pytest | Unit/integration tests |
 | **Monitoring** | Prometheus | Metrics collection |
+| **Orchestration** | Prefect | Workflow automation |
 | **Containerization** | Docker | API deployment |
 
 ---

@@ -1,0 +1,123 @@
+name: CD - Continuous Deployment
+
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - 'v*'
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    needs: []
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements/prod.txt
+
+    - name: Run smoke tests
+      run: |
+        pip install pytest
+        pytest tests/test_setup.py -v
+
+    - name: Deploy to staging
+      run: |
+        echo "🚀 Deploying to staging environment"
+        echo "✅ Deployment successful!"
+        # Add your deployment commands here:
+        # - scp files to server
+        # - ssh and restart services
+        # - update Docker containers
+        # Example:
+        # docker-compose -f docker-compose.prod.yml up -d --build
+
+    - name: Notify deployment status
+      run: |
+        echo "📦 Deployed to staging: https://staging.yourdomain.com"
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: []
+    environment:
+      name: production
+      url: https://yourdomain.com
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements/prod.txt
+
+    - name: Run all tests
+      run: |
+        pip install -r requirements/test.txt
+        pytest tests/ -v
+
+    - name: Build production Docker image
+      run: |
+        docker build -t bus-passenger-classifier:${{ github.ref_name }} .
+        docker tag bus-passenger-classifier:${{ github.ref_name }} bus-passenger-classifier:latest
+
+    - name: Deploy to production
+      run: |
+        echo "🚀 Deploying version ${{ github.ref_name }} to production"
+        echo "✅ Production deployment successful!"
+        # Add your production deployment commands here:
+        # docker push your-registry/bus-passenger-classifier:${{ github.ref_name }}
+        # kubectl apply -f k8s/deployment.yaml
+
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
+        body: |
+          🚀 Production Release ${{ github.ref_name }}
+          
+          ## Changes
+          - Automated deployment via GitHub Actions
+          - All tests passed ✅
+          
+          ## Deployed Services
+          - API: https://api.yourdomain.com
+          - Dashboard: https://dashboard.yourdomain.com
+          - MLflow: https://mlflow.yourdomain.com
+        draft: false
+        prerelease: false
+
+    - name: Notify team
+      run: |
+        echo "📢 Production deployment complete!"
+        echo "Version: ${{ github.ref_name }}"
+        echo "URL: https://yourdomain.com"
+
+  rollback:
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+    - name: Rollback deployment
+      run: |
+        echo "⚠️ Deployment failed - initiating rollback"
+        # Add rollback commands here
+        # docker-compose down
+        # docker-compose up -d --previous-version

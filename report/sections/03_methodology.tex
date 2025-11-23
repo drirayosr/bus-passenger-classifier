@@ -1,0 +1,141 @@
+\section{Methodology}
+
+\subsection{Data Description}
+
+\subsubsection{Bus Dataset}
+The bus dataset contains 53,155 GPS records with the following attributes:
+\begin{itemize}
+    \item \textbf{Spatial}: Latitude, longitude
+    \item \textbf{Kinematic}: Speed, bearing (direction)
+    \item \textbf{Temporal}: Timestamps
+    \item \textbf{Operational}: Door state (open/closed)
+\end{itemize}
+
+\subsubsection{Passenger Dataset}
+The passenger dataset contains 50,601 smartphone records with:
+\begin{itemize}
+    \item \textbf{GPS}: Latitude, longitude, speed, bearing
+    \item \textbf{Accelerometer}: X, Y, Z acceleration (accx, accy, accz)
+    \item \textbf{Gyroscope}: X, Y, Z rotation (rotx, roty, rotz)
+    \item \textbf{Magnetometer}: X, Y, Z magnetic field (magx, magy, magz)
+    \item \textbf{Activity}: Motion classification (stationary, walking, running, automotive, cycling, unknown)
+    \item \textbf{Proximity}: RSSI and proximity sensor readings (rssiA-C, rssi1-2, proxA-C, prox1-2)
+    \item \textbf{Web coordinates}: x\_web, y\_web (projected coordinates)
+\end{itemize}
+
+\subsection{Feature Engineering Pipeline}
+
+The feature engineering process transforms raw GPS traces into predictive features through multiple stages:
+
+\subsubsection{Stage 1: Temporal Alignment}
+Bus and passenger data are temporally aligned using a tolerance window (default: 60 seconds) to match passenger records with corresponding bus positions.
+
+\subsubsection{Stage 2: Kinematic Features}
+\paragraph{Speed Features}
+\begin{itemize}
+    \item Instantaneous speed from GPS
+    \item Speed difference between passenger and nearest bus
+    \item Speed ratio (passenger/bus)
+\end{itemize}
+
+\paragraph{Acceleration Features}
+Computed using consecutive GPS points:
+\begin{equation}
+    a = \frac{\Delta v}{\Delta t}
+\end{equation}
+where $\Delta v$ is velocity change and $\Delta t$ is time interval.
+
+\paragraph{Bearing Features}
+Direction of movement calculated from consecutive coordinates:
+\begin{equation}
+    \theta = \arctan2(\Delta \text{lon}, \Delta \text{lat})
+\end{equation}
+Bearing difference between passenger and bus indicates alignment/divergence.
+
+\subsubsection{Stage 3: Proximity Features}
+\paragraph{Distance to Nearest Bus}
+Haversine distance between passenger and closest bus:
+\begin{equation}
+    d = 2r \arcsin\left(\sqrt{\sin^2\left(\frac{\Delta\phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta\lambda}{2}\right)}\right)
+\end{equation}
+where $\phi$ is latitude, $\lambda$ is longitude, and $r$ is Earth's radius.
+
+\paragraph{Distance to Bus Stops}
+Minimum distance to predefined bus stop locations from OpenStreetMap data.
+
+\subsubsection{Stage 4: Sensor Features}
+Raw sensor data from smartphones provide additional context:
+\begin{itemize}
+    \item Accelerometer magnitude: $\|\vec{a}\| = \sqrt{a_x^2 + a_y^2 + a_z^2}$
+    \item Activity confidence scores
+    \item Proximity and RSSI values
+\end{itemize}
+
+\subsection{Dimensionality Reduction and Clustering}
+
+\subsubsection{PCA (Principal Component Analysis)}
+With 40+ engineered features, dimensionality reduction prevents overfitting and improves clustering performance. PCA transforms features to 4 principal components capturing maximum variance:
+
+\begin{equation}
+    \mathbf{Z} = \mathbf{X} \mathbf{W}
+\end{equation}
+
+where $\mathbf{X}$ is the feature matrix and $\mathbf{W}$ is the projection matrix.
+
+\subsubsection{HDBSCAN Clustering}
+HDBSCAN operates on the PCA-reduced feature space:
+
+\begin{enumerate}
+    \item \textbf{Core distance computation}: For each point, find the distance to its $k$-th nearest neighbor (min\_samples parameter)
+    \item \textbf{Mutual reachability graph}: Connect points based on mutual reachability distance
+    \item \textbf{Hierarchy construction}: Build minimum spanning tree of the graph
+    \item \textbf{Cluster extraction}: Extract stable clusters across density levels
+    \item \textbf{Noise labeling}: Points not belonging to any cluster are labeled as noise (label = -1)
+\end{enumerate}
+
+Key parameters:
+\begin{itemize}
+    \item \texttt{min\_cluster\_size}: Minimum points to form a cluster (default: 1000)
+    \item \texttt{min\_samples}: Points in neighborhood for core point (default: 5)
+\end{itemize}
+
+\subsection{Label Mapping}
+
+HDBSCAN produces cluster labels $\{-1, 0, 1, 2, ...\}$ where:
+\begin{itemize}
+    \item $-1$ = Noise (outliers)
+    \item $0, 1, 2, ...$ = Cluster IDs
+\end{itemize}
+
+These are mapped to binary classification:
+\begin{itemize}
+    \item \textbf{Label 1 (IN)}: Passengers in dominant cluster (typically cluster 1)
+    \item \textbf{Label 0 (OUT)}: Noise and other clusters
+\end{itemize}
+
+The assumption is that passengers inside the bus form a dense, cohesive cluster in the feature space due to similar kinematic and proximity characteristics.
+
+\subsection{Pipeline Architecture}
+
+The complete pipeline follows scikit-learn's transformer API:
+
+\begin{lstlisting}[style=python, caption=Pipeline Structure]
+from sklearn.pipeline import Pipeline
+
+pipeline = Pipeline([
+    ('speed', SpeedTransformer()),
+    ('acceleration', AccelerationTransformer()),
+    ('bearing', BearingTransformer()),
+    ('proximity', ProximityTransformer()),
+    ('pca_hdbscan', PCAHDBSCANTransformer()),
+    ('label_mapper', LabelMapperTransformer())
+])
+\end{lstlisting}
+
+This modular design enables:
+\begin{itemize}
+    \item Independent testing of each component
+    \item Easy hyperparameter tuning
+    \item Reproducible preprocessing
+    \item Seamless integration with scikit-learn tools
+\end{itemize}

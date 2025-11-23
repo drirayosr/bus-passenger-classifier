@@ -13,17 +13,21 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements folder
 COPY requirements/ ./requirements/
 
-# Install Python dependencies (production: base + mlflow + api)
+# Install Python dependencies (production: base + mlflow + api + dashboard)
 RUN pip install --no-cache-dir -r requirements/base.txt \
     && pip install --no-cache-dir -r requirements/mlflow.txt \
-    && pip install --no-cache-dir -r requirements/api.txt
+    && pip install --no-cache-dir -r requirements/api.txt \
+    && pip install --no-cache-dir -r requirements/dashboard.txt
 
 # Copy application code
 COPY config/ ./config/
 COPY src/ ./src/
 COPY api/ ./api/
+COPY dashboard/ ./dashboard/
 COPY models/ ./models/
 COPY mlruns/ ./mlruns/
+COPY passengers.csv ./
+COPY bus.csv ./
 
 # Expose port
 EXPOSE 8000

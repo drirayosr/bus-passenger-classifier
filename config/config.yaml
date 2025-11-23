@@ -9,27 +9,27 @@ data:
 
 preprocessing:
   # Area of Interest (AOI) buffer around bus route in meters
-  aoi_buffer_m: 50
+  aoi_buffer_m: 75  # Increased from 50 for better context
   
   # Speed filtering
-  speed_limit_kmh: 35
-  max_speed_mps: 9.72  # 35 km/h = 9.72 m/s
+  speed_limit_kmh: 40  # Increased from 35 to include more data
+  max_speed_mps: 11.11  # 40 km/h = 11.11 m/s
   
   # Time tolerance for GPS alignment between bus and phones
-  bus_time_tolerance: "60s"
+  bus_time_tolerance: "90s"  # Increased from 60s for better matching
 
 feature_engineering:
   # PCA dimensionality reduction
-  pca_n_components: 4
+  pca_n_components: 5  # Increased from 4 for more information
   
   # DBSCAN for bus stop detection
   dbscan_eps: 0.0001
   dbscan_min_samples: 5
   
-  # HDBSCAN for passenger classification (optimized via tuning - F1=0.6149)
-  hdbscan_min_cluster_size: 300
-  hdbscan_min_samples: null  # null = auto (uses min_cluster_size)
-  hdbscan_cluster_selection_epsilon: 0.5  # allows smaller clusters near large ones
+  # HDBSCAN for passenger classification - OPTIMIZED SETTINGS
+  hdbscan_min_cluster_size: 180  # Reduced from 300 for more granular clusters
+  hdbscan_min_samples: 12  # Explicit value for conservative clustering
+  hdbscan_cluster_selection_epsilon: 0.35  # Reduced from 0.5 for stricter separation
   hdbscan_cluster_selection_method: 'eom'  # 'eom' or 'leaf'
   
   # Bus stop coordinates (detected from notebook)

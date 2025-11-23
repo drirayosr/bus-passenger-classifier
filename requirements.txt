@@ -25,5 +25,8 @@
 # 7. Production (API + MLflow + base):
 #    pip install -r requirements/prod.txt
 #
+# 8. With Orchestration (Prefect workflows):
+#    pip install -r requirements/orchestration.txt
+#
 # Default: Install production requirements
 -r requirements/prod.txt

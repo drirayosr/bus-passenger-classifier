@@ -66,11 +66,12 @@ st.markdown("""
 # Cache data loading
 @st.cache_data
 def load_passenger_data():
-    """Load passenger data"""
+    """Load passenger data from CSV file"""
     try:
         df = pd.read_csv('passengers.csv')
         # Use format='ISO8601' to handle mixed timestamp formats
-        df['timestamp_utc'] = pd.to_datetime(df['timestamp_utc'], format='ISO8601')
+        if 'timestamp_utc' in df.columns:
+            df['timestamp_utc'] = pd.to_datetime(df['timestamp_utc'], format='ISO8601')
         return df
     except Exception as e:
         st.error(f"Error loading passenger data: {e}")
@@ -78,7 +79,7 @@ def load_passenger_data():
 
 @st.cache_data
 def load_bus_data():
-    """Load bus data"""
+    """Load bus data from CSV file"""
     try:
         df = pd.read_csv('bus.csv')
         if 'timestamp_utc' in df.columns:
@@ -154,6 +155,24 @@ with st.sidebar:
     else:
         st.markdown('<div class="error-box">❌ API Offline</div>', unsafe_allow_html=True)
         st.caption("Start API: `python start_api.py`")
+    
+    st.markdown("---")
+    
+    # Quick Links
+    st.markdown("### 🔗 Quick Links")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📈 MLflow UI", width='stretch'):
+            st.markdown('[Open MLflow](http://localhost:5000)', unsafe_allow_html=True)
+    with col2:
+        if st.button("🚀 FastAPI", width='stretch'):
+            st.markdown('[Open API Docs](http://localhost:8000/docs)', unsafe_allow_html=True)
+    
+    # Direct links (always visible)
+    st.markdown("- [MLflow UI](http://localhost:5000) - Experiment tracking")
+    st.markdown("- [FastAPI Docs](http://localhost:8000/docs) - API documentation")
+    st.markdown("- [API Health](http://localhost:8000/health) - API status")
     
     st.markdown("---")
     st.markdown("### ℹ️ About")
@@ -248,7 +267,7 @@ if page == "🏠 Home":
                 range_y=[0, 1]
             )
             fig.update_layout(showlegend=False, height=300)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         else:
             st.info("Model metrics not available. Train a model first.")
     
@@ -309,7 +328,7 @@ elif page == "📊 Data Explorer":
                         title="IN vs OUT Distribution",
                         color_discrete_sequence=['#FF6B6B', '#4ECDC4']
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                 else:
                     st.info("No label column found in data")
             
@@ -325,7 +344,7 @@ elif page == "📊 Data Explorer":
                         color_discrete_sequence=['#1f77b4']
                     )
                     fig.update_layout(showlegend=False)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             
             # Additional distributions
             col3, col4 = st.columns(2)
@@ -340,7 +359,7 @@ elif page == "📊 Data Explorer":
                         color_discrete_sequence=['#2ecc71']
                     )
                     fig.update_layout(showlegend=False)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             
             with col4:
                 if 'automotive' in passengers_df.columns:
@@ -352,7 +371,7 @@ elif page == "📊 Data Explorer":
                         color_discrete_sequence=['#e74c3c']
                     )
                     fig.update_layout(showlegend=False)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
         
         with tab2:
             st.markdown("### Time-based Analysis")
@@ -375,7 +394,7 @@ elif page == "📊 Data Explorer":
                         color_continuous_scale='Blues'
                     )
                     fig.update_layout(showlegend=False)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                 
                 with col2:
                     st.markdown("#### Activity by Day of Week")
@@ -391,7 +410,7 @@ elif page == "📊 Data Explorer":
                         color_continuous_scale='Greens'
                     )
                     fig.update_layout(showlegend=False, xaxis_tickangle=-45)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
         
         with tab3:
             st.markdown("### User Analysis")
@@ -409,7 +428,7 @@ elif page == "📊 Data Explorer":
                     color_continuous_scale='Reds'
                 )
                 fig.update_layout(showlegend=False, xaxis_tickangle=-45)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             
             with col2:
                 st.markdown("#### Statistics")
@@ -451,7 +470,7 @@ elif page == "📊 Data Explorer":
             if user_filter:
                 filtered_df = filtered_df[filtered_df['id'].isin(user_filter)]
             
-            st.dataframe(filtered_df.head(n_rows), use_container_width=True)
+            st.dataframe(filtered_df.head(n_rows), width='stretch')
             
             # Download button
             csv = filtered_df.head(n_rows).to_csv(index=False)
@@ -504,7 +523,7 @@ elif page == "🗺️ Map View":
             margin={"r": 0, "t": 40, "l": 0, "b": 0}
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
         
         # Geographic statistics
         col1, col2, col3, col4 = st.columns(4)
@@ -564,7 +583,7 @@ elif page == "📈 Model Performance":
                 range_y=[0, 1]
             )
             fig.update_layout(showlegend=False)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         
         with col2:
             st.markdown("### IN Class Performance")
@@ -585,7 +604,7 @@ elif page == "📈 Model Performance":
                 range_y=[0, 1]
             )
             fig.update_layout(showlegend=False)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         
         st.markdown("---")
         
@@ -610,7 +629,7 @@ elif page == "📈 Model Performance":
                     names=list(cluster_data.keys()),
                     title="Predicted Clusters"
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
 # ========================
 # PREDICTION TOOL PAGE
@@ -695,7 +714,7 @@ elif page == "🔮 Prediction Tool":
         st.markdown("---")
         
         # Prediction button
-        if st.button("🔮 Make Prediction", type="primary", use_container_width=True):
+        if st.button("🔮 Make Prediction", type="primary", width='stretch'):
             with st.spinner("Calling API..."):
                 success, result = call_prediction_api(lat, lon, timestamp, speed, user_id)
             
@@ -812,7 +831,7 @@ elif page == "📡 API Monitor":
             {"Method": "GET", "Endpoint": "/docs", "Description": "API documentation"},
         ]
         
-        st.dataframe(endpoints, use_container_width=True, hide_index=True)
+        st.dataframe(endpoints, width='stretch', hide_index=True)
 
 # Footer
 st.markdown("---")

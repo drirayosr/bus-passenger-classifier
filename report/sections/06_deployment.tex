@@ -1,0 +1,317 @@
+\section{Deployment and MLOps Practices}
+
+\subsection{Deployment Architecture}
+
+The production system follows a microservices architecture:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/architecture_diagram.png}
+\caption{System Architecture: Containerized services with Docker Compose}
+\label{fig:architecture}
+\end{figure}
+
+\subsubsection{Components}
+
+\begin{enumerate}
+    \item \textbf{FastAPI Application}: REST API for predictions
+    \begin{itemize}
+        \item Port: 8000
+        \item Container: bus-classifier-api
+        \item Health checks every 30 seconds
+    \end{itemize}
+    
+    \item \textbf{MLflow Tracking Server}: Experiment tracking and model registry
+    \begin{itemize}
+        \item Port: 5000
+        \item Container: bus-classifier-mlflow
+        \item Persistent storage via volume mounts
+    \end{itemize}
+    
+    \item \textbf{Streamlit Dashboard}: Interactive visualization and monitoring
+    \begin{itemize}
+        \item Port: 8501
+        \item Standalone or containerized deployment
+        \item Connects to API and MLflow
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Docker Compose Configuration}
+
+Multi-container orchestration with Docker Compose:
+
+\begin{lstlisting}[language=yaml, caption=docker-compose.yml]
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: bus-classifier-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./mlruns:/app/mlruns
+      - ./models:/app/models
+    environment:
+      - MLFLOW_TRACKING_URI=mlruns
+      - USE_LOCAL_MODEL=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mlflow:
+    image: python:3.11-slim
+    container_name: bus-classifier-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    command: >
+      sh -c "pip install mlflow &&
+             mlflow ui --host 0.0.0.0 --port 5000 
+                       --backend-store-uri /mlruns"
+    restart: unless-stopped
+\end{lstlisting}
+
+\subsection{CI/CD Pipeline}
+
+\subsubsection{Continuous Integration}
+
+Automated testing on every commit:
+
+\begin{enumerate}
+    \item \textbf{Unit Tests}: pytest runs 19 test cases covering transformers, pipeline, and utilities
+    \item \textbf{Integration Tests}: End-to-end pipeline validation
+    \item \textbf{API Tests}: FastAPI TestClient validates all endpoints
+    \item \textbf{Code Coverage}: pytest-cov ensures >80\% coverage
+\end{enumerate}
+
+\subsubsection{Code Quality}
+
+Automated linting and formatting:
+
+\begin{itemize}
+    \item \textbf{flake8}: PEP 8 style compliance
+    \item \textbf{black}: Automated code formatting
+    \item \textbf{isort}: Import statement organization
+    \item \textbf{mypy}: Static type checking
+\end{itemize}
+
+\subsubsection{Continuous Deployment}
+
+GitHub Actions workflow stages:
+
+\begin{enumerate}
+    \item \textbf{Build Stage}: Compile Docker images, check for errors
+    \item \textbf{Test Stage}: Run full test suite in container
+    \item \textbf{Training Stage}: Retrain model with latest data, log to MLflow
+    \item \textbf{Registry Stage}: Register new model version if performance improves
+    \item \textbf{Deploy Stage}: Update production containers (manual approval)
+\end{enumerate}
+
+\subsection{Model Versioning and Registry}
+
+MLflow Model Registry manages model lifecycle:
+
+\begin{table}[h]
+\centering
+\caption{Model Registry States}
+\begin{tabular}{lp{8cm}}
+\toprule
+\textbf{Stage} & \textbf{Description} \\
+\midrule
+None & Newly registered, not yet validated \\
+Staging & Under evaluation, not production-ready \\
+\textbf{Production} & \textbf{Currently serving predictions (v2)} \\
+Archived & Deprecated, kept for historical reference \\
+\bottomrule
+\end{tabular}
+\label{tab:model_stages}
+\end{table}
+
+Model transition workflow:
+\begin{enumerate}
+    \item Train new model → Register as v3 (Stage: None)
+    \item Validate on holdout set → Promote to Staging
+    \item A/B test against Production model
+    \item If superior → Promote to Production, archive old version
+\end{enumerate}
+
+\subsection{Data Versioning with DVC}
+
+DVC ensures reproducible data pipelines:
+
+\begin{lstlisting}[language=bash, caption=DVC Pipeline]
+# Define pipeline stages
+dvc run -n preprocess \
+    -d data/raw/passengers.csv \
+    -d data/raw/bus.csv \
+    -o data/processed/features.csv \
+    python src/preprocess.py
+
+dvc run -n train \
+    -d data/processed/features.csv \
+    -o models/pipeline.joblib \
+    python src/train_mlflow.py
+
+# Reproduce pipeline
+dvc repro
+\end{lstlisting}
+
+Benefits:
+\begin{itemize}
+    \item Automatic dependency tracking
+    \item Cacheable pipeline stages
+    \item Shareable across team via Git
+    \item Remote storage for large artifacts
+\end{itemize}
+
+\subsection{Monitoring and Observability}
+
+\subsubsection{System Monitoring}
+
+\begin{itemize}
+    \item \textbf{Health checks}: Docker healthcheck ensures API availability
+    \item \textbf{Logging}: Structured logs via Python logging module
+    \item \textbf{Metrics}: Prometheus-compatible metrics endpoint (planned)
+\end{itemize}
+
+\subsubsection{Model Monitoring}
+
+Dashboard tracks key model health indicators:
+
+\begin{enumerate}
+    \item \textbf{Prediction Distribution}: Monitor class balance over time
+    \item \textbf{Feature Drift}: Track feature statistics (mean, std, outliers)
+    \item \textbf{Performance Metrics}: Live F1, accuracy on recent predictions
+    \item \textbf{Latency}: API response time percentiles
+\end{enumerate}
+
+\subsubsection{Alerting (Future Work)}
+
+Planned alerting system:
+\begin{itemize}
+    \item Performance degradation (F1 drops >5\%)
+    \item Data drift detection (Kolmogorov-Smirnov test)
+    \item API errors (5xx responses >1\%)
+    \item Model staleness (>30 days since retraining)
+\end{itemize}
+
+\subsection{Security Considerations}
+
+\subsubsection{API Security}
+
+\begin{itemize}
+    \item \textbf{Input validation}: Pydantic models prevent malformed requests
+    \item \textbf{Rate limiting}: Prevent abuse (planned: 100 req/min per IP)
+    \item \textbf{Authentication}: API key-based auth (planned)
+    \item \textbf{HTTPS}: TLS encryption for production deployment
+\end{itemize}
+
+\subsubsection{Data Privacy}
+
+\begin{itemize}
+    \item GPS coordinates never stored persistently
+    \item User IDs hashed before logging
+    \item GDPR compliance: No PII retention
+    \item Anonymized data for model training
+\end{itemize}
+
+\subsection{Scalability}
+
+\subsubsection{Horizontal Scaling}
+
+API can scale horizontally behind a load balancer:
+
+\begin{lstlisting}[language=yaml, caption=Kubernetes Deployment (example)]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bus-classifier-api
+spec:
+  replicas: 3  # Multiple instances
+  selector:
+    matchLabels:
+      app: bus-classifier
+  template:
+    spec:
+      containers:
+      - name: api
+        image: bus-classifier-api:latest
+        ports:
+        - containerPort: 8000
+\end{lstlisting}
+
+\subsubsection{Performance Optimization}
+
+\begin{itemize}
+    \item Model loaded once at startup (not per request)
+    \item Batch prediction support for efficiency
+    \item Feature computation cached where possible
+    \item Database connection pooling (if database added)
+\end{itemize}
+
+\subsection{Cost Analysis}
+
+Estimated monthly operational costs for AWS deployment:
+
+\begin{table}[h]
+\centering
+\caption{Deployment Cost Estimate (AWS, us-east-1)}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Service} & \textbf{Configuration} & \textbf{Monthly Cost} \\
+\midrule
+EC2 (t3.medium) & API + MLflow & \$30 \\
+ECS Fargate & 2 containers, 1 vCPU & \$45 \\
+S3 Storage & 100 GB (data + models) & \$2.30 \\
+Data Transfer & 500 GB/month & \$45 \\
+\midrule
+\textbf{Total} & & \textbf{\$122/month} \\
+\bottomrule
+\end{tabular}
+\label{tab:costs}
+\end{table}
+
+For educational/small-scale deployment, free tiers or local hosting suffice.
+
+\subsection{Maintenance and Updates}
+
+\subsubsection{Regular Maintenance}
+
+\begin{itemize}
+    \item \textbf{Weekly}: Review MLflow experiments, compare model versions
+    \item \textbf{Monthly}: Retrain model with accumulated data
+    \item \textbf{Quarterly}: Dependency updates, security patches
+    \item \textbf{Annually}: Full system audit, architecture review
+\end{itemize}
+
+\subsubsection{Update Strategy}
+
+\begin{enumerate}
+    \item Pull latest code from Git
+    \item Run full test suite
+    \item Build new Docker image
+    \item Deploy to staging environment
+    \item Smoke tests on staging
+    \item Blue-green deployment to production
+    \item Monitor for 24 hours
+    \item Rollback if issues detected
+\end{enumerate}
+
+\subsection{Documentation}
+
+Comprehensive documentation in \texttt{docs/} folder:
+
+\begin{itemize}
+    \item \textbf{docs/setup/}: Installation and configuration guides
+    \item \textbf{docs/usage/}: User guides and tutorials
+    \item \textbf{docs/development/}: Architecture and MLOps roadmap
+    \item \textbf{docs/archive/}: Historical phase summaries
+    \item \textbf{requirements/README.md}: Modular installation guide
+\end{itemize}
+
+All code includes docstrings following Google style guide. API documentation auto-generated via FastAPI's OpenAPI integration.

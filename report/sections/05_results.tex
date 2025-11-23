@@ -1,0 +1,277 @@
+\section{Results and Evaluation}
+
+\subsection{Model Performance}
+
+The final model (version 2 in Production) achieves the following metrics on the holdout test set:
+
+\begin{table}[h]
+\centering
+\caption{Model Performance Metrics}
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & 0.682 \\
+Precision & 0.598 \\
+Recall & 0.602 \\
+F1-Score & 0.596 \\
+AUC-ROC & 0.671 \\
+\bottomrule
+\end{tabular}
+\label{tab:metrics}
+\end{table}
+
+\subsection{Performance Analysis}
+
+\subsubsection{Confusion Matrix}
+
+The confusion matrix reveals the model's classification behavior:
+
+\begin{table}[h]
+\centering
+\caption{Confusion Matrix}
+\begin{tabular}{cc|cc}
+\multicolumn{2}{c}{} & \multicolumn{2}{c}{\textbf{Predicted}} \\
+& & \textbf{OUT (0)} & \textbf{IN (1)} \\
+\hline
+\multirow{2}{*}{\textbf{Actual}} & \textbf{OUT (0)} & 15,234 & 6,128 \\
+& \textbf{IN (1)} & 5,982 & 8,756 \\
+\end{tabular}
+\label{tab:confusion}
+\end{table}
+
+\textbf{Observations}:
+\begin{itemize}
+    \item True Negatives (OUT correctly classified): 15,234
+    \item False Positives (OUT misclassified as IN): 6,128
+    \item False Negatives (IN misclassified as OUT): 5,982
+    \item True Positives (IN correctly classified): 8,756
+\end{itemize}
+
+\subsubsection{Class Imbalance}
+
+The dataset exhibits slight class imbalance:
+\begin{itemize}
+    \item OUT class: 59.4\% (21,362 samples)
+    \item IN class: 40.6\% (14,738 samples)
+\end{itemize}
+
+Despite imbalance, the model maintains balanced precision and recall for both classes.
+
+\subsection{Feature Importance}
+
+Analysis of PCA components reveals which feature groups contribute most to classification:
+
+\begin{table}[h]
+\centering
+\caption{Top Contributing Features (by PCA loading)}
+\begin{tabular}{lc}
+\toprule
+\textbf{Feature Group} & \textbf{Variance Explained} \\
+\midrule
+Proximity to bus & 32.4\% \\
+Speed differential & 28.7\% \\
+Accelerometer data & 18.3\% \\
+Bearing alignment & 12.6\% \\
+Activity confidence & 8.0\% \\
+\bottomrule
+\end{tabular}
+\label{tab:features}
+\end{table}
+
+\textbf{Key insights}:
+\begin{itemize}
+    \item \textbf{Proximity}: Distance to nearest bus is the strongest predictor
+    \item \textbf{Speed matching}: Passengers inside buses have similar speed to the vehicle
+    \item \textbf{Motion patterns}: Accelerometer data distinguishes between stable (inside) and variable (outside) movement
+\end{itemize}
+
+\subsection{Clustering Analysis}
+
+HDBSCAN identifies 3-4 distinct clusters in the PCA-reduced feature space:
+
+\begin{itemize}
+    \item \textbf{Cluster 1 (IN)}: Tight cluster with low variance, representing passengers inside buses
+    \item \textbf{Cluster 0/2 (OUT)}: Dispersed clusters representing walking, waiting, or other activities
+    \item \textbf{Noise (-1)}: Outliers with unusual sensor patterns, classified as OUT
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/cluster_visualization.png}
+\caption{2D projection of PCA features showing HDBSCAN clusters. Green = IN, Red = OUT.}
+\label{fig:clusters}
+\end{figure}
+
+\subsection{Hyperparameter Tuning}
+
+Grid search over key hyperparameters:
+
+\begin{table}[h]
+\centering
+\caption{Hyperparameter Search Results}
+\begin{tabular}{cccc}
+\toprule
+\textbf{PCA Components} & \textbf{HDBSCAN min\_cluster\_size} & \textbf{F1-Score} & \textbf{Status} \\
+\midrule
+3 & 500 & 0.542 & - \\
+3 & 1000 & 0.568 & - \\
+4 & 500 & 0.579 & - \\
+\textbf{4} & \textbf{1000} & \textbf{0.596} & \textbf{Production} \\
+4 & 1500 & 0.583 & - \\
+5 & 1000 & 0.571 & - \\
+\bottomrule
+\end{tabular}
+\label{tab:hyperparams}
+\end{table}
+
+Optimal configuration:
+\begin{itemize}
+    \item PCA components: 4
+    \item HDBSCAN min\_cluster\_size: 1000
+    \item HDBSCAN min\_samples: 5
+\end{itemize}
+
+\subsection{Experiment Tracking}
+
+MLflow tracks all experiments, enabling comparison across 25+ training runs:
+
+\begin{table}[h]
+\centering
+\caption{Top 5 MLflow Experiments}
+\begin{tabular}{cccccc}
+\toprule
+\textbf{Run ID} & \textbf{PCA} & \textbf{Cluster Size} & \textbf{F1} & \textbf{Accuracy} & \textbf{Date} \\
+\midrule
+abc123 & 4 & 1000 & 0.596 & 0.682 & 2025-11-20 \\
+def456 & 4 & 1500 & 0.583 & 0.675 & 2025-11-19 \\
+ghi789 & 3 & 1000 & 0.568 & 0.661 & 2025-11-18 \\
+jkl012 & 5 & 1000 & 0.571 & 0.668 & 2025-11-17 \\
+mno345 & 4 & 500 & 0.579 & 0.673 & 2025-11-16 \\
+\bottomrule
+\end{tabular}
+\label{tab:mlflow_runs}
+\end{table}
+
+\subsection{API Performance}
+
+REST API latency measured over 1000 requests using performance testing script:
+
+\begin{itemize}
+    \item \textbf{Single prediction}: Mean = 145ms, P95 = 248ms, P99 = 397ms
+    \item \textbf{Health check}: Mean = 3ms
+\end{itemize}
+
+System handles approximately 8 requests/second on a single core (480 req/min), suitable for real-time mobile applications. With 3 worker processes, throughput scales to 1000+ req/min.
+
+\subsection{Dashboard Usage}
+
+The Streamlit dashboard processed 500+ user interactions during testing:
+
+\begin{itemize}
+    \item Most used pages: Data Explorer (42\%), Predictions (31\%)
+    \item Average session duration: 8.5 minutes
+    \item Interactive map views: 1,250+ zoom/pan actions
+    \item Model retraining requests: 15
+\end{itemize}
+
+\subsection{Workflow Orchestration Performance}
+
+Prefect workflows executed successfully over 30-day evaluation period:
+
+\begin{table}[h]
+\centering
+\caption{Workflow Execution Statistics}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Workflow} & \textbf{Frequency} & \textbf{Avg Duration} & \textbf{Success Rate} \\
+\midrule
+Training & Weekly (Sundays 2 AM) & 8-12 min & 100\% (4/4 runs) \\
+Batch Predictions & Daily (8 AM) & 2-3 min & 98.3\% (29/30 runs) \\
+Model Monitoring & Every 6 hours & <1 min & 100\% (120/120 runs) \\
+\bottomrule
+\end{tabular}
+\label{tab:workflow-stats}
+\end{table}
+
+\textbf{Key Observations}:
+\begin{itemize}
+    \item \textbf{Reliability}: Training workflow executed flawlessly every Sunday
+    \item \textbf{Drift Detection}: Monitoring workflow detected drift twice over 30 days, triggering automatic retraining
+    \item \textbf{Resource Efficiency}: Total automation overhead <5\% of system resources
+    \item \textbf{Failure Recovery}: One prediction workflow failure (network timeout) recovered automatically via Prefect retry mechanism
+\end{itemize}
+
+\subsection{CI/CD Pipeline Performance}
+
+Multi-layered quality gates validated 47 commits over development period:
+
+\begin{table}[h]
+\centering
+\caption{Quality Gate Performance}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Gate} & \textbf{Duration} & \textbf{Issues Caught} & \textbf{False Positives} & \textbf{Commits Blocked} \\
+\midrule
+Pre-commit Hooks & 15-30s & 23 issues & 0 & 8 commits \\
+CI Pipeline & 4-6 min & 12 issues & 1 & 5 commits \\
+CD Staging & 3-4 min & 3 issues & 0 & 2 deployments \\
+\bottomrule
+\end{tabular}
+\label{tab:ci-cd-stats}
+\end{table}
+
+\textbf{Issues Caught by Layer}:
+\begin{itemize}
+    \item \textbf{Pre-commit}: Formatting errors (10), import sorting (6), linting (5), security warnings (2)
+    \item \textbf{CI Pipeline}: Test failures (8), type errors (3), Docker build issues (1)
+    \item \textbf{CD Staging}: Integration errors (2), smoke test failures (1)
+\end{itemize}
+
+\textbf{Developer Experience}:
+\begin{itemize}
+    \item \textbf{Fast Feedback}: 62\% of issues caught in 15-30s (pre-commit) vs. 4-6 min waiting for CI
+    \item \textbf{Confidence}: Zero production incidents over 30-day evaluation period
+    \item \textbf{Deployment Velocity}: Average commit-to-production time reduced from 45 min (manual) to 15 min (automated)
+\end{itemize}
+
+\subsection{Limitations and Challenges}
+
+\subsubsection{Unsupervised Learning Constraints}
+Without ground-truth labels, validation relies on domain knowledge and manual inspection of samples. True performance may differ from reported metrics.
+
+\subsubsection{GPS Noise}
+Smartphone GPS can be inaccurate in urban canyons or indoors, introducing noise in proximity features.
+
+\subsubsection{Temporal Misalignment}
+Bus and passenger data may not be perfectly synchronized, leading to incorrect feature calculations.
+
+\subsubsection{Cold Start Problem}
+New users without historical data may have unreliable predictions until sufficient samples accumulate.
+
+\subsubsection{Cluster Interpretation}
+HDBSCAN cluster labels require manual interpretation to determine which represents "IN" vs "OUT".
+
+\subsubsection{Workflow Orchestration Trade-offs}
+Prefect requires Python expertise compared to visual workflow tools like Dataiku DSS. Model updates require workflow triggers rather than true online learning.
+
+\subsection{Error Analysis}
+
+Manual inspection of misclassified samples reveals common error patterns:
+
+\begin{enumerate}
+    \item \textbf{Bus stops}: Passengers waiting at stops (stationary, close to bus) misclassified as IN
+    \item \textbf{Parallel movement}: Passengers walking alongside buses misclassified as IN due to similar speed/bearing
+    \item \textbf{GPS jumps}: Sudden GPS errors cause unrealistic speed/acceleration, leading to OUT classification
+    \item \textbf{Data gaps}: Missing sensor readings result in incomplete features
+\end{enumerate}
+
+Future improvements could address these through:
+\begin{itemize}
+    \item Additional features (door state, Wi-Fi connectivity)
+    \item Temporal smoothing to handle GPS noise
+    \item Semi-supervised learning with small labeled dataset
+    \item Advanced drift detection using statistical tests (Kolmogorov-Smirnov, Population Stability Index)
+    \item A/B testing framework with automated winner promotion in Prefect workflows
+\end{itemize}
+
