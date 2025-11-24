@@ -86,7 +86,6 @@ MANIFEST
 
 
 # Temporary test files
-temp_tests/
 # Do not ignore main test files
 !tests/
 !test_*.py

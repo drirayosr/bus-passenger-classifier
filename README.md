@@ -158,6 +158,66 @@ bus_miniproject/
 
 ---
 
+
+## 🛠️ Project Workflow
+
+This project follows a modular MLOps workflow. Below are the main stages to help you understand and reproduce the full pipeline:
+
+1. **Data Preparation**
+  - Place raw data files (`passengers.csv`, `bus.csv`) in `data/raw/`.
+  - (Optional) Use DVC to fetch versioned data:  
+    ```powershell
+    dvc pull
+    ```
+
+2. **Configuration**
+  - Edit `config/config.yaml` to adjust preprocessing, feature engineering, and MLflow settings.
+
+3. **Model Training**
+  - Train the model and log experiments to MLflow:
+    ```powershell
+    python src/train_mlflow.py
+    ```
+  - Model artifacts are saved in `models/` and tracked by MLflow.
+
+4. **Model Evaluation**
+  - Review experiment results and metrics in the MLflow UI:
+    ```powershell
+    mlflow ui
+    # Visit http://localhost:5000
+    ```
+
+5. **API Serving**
+  - Start the FastAPI server for real-time predictions:
+    ```powershell
+    python start_api.py
+    # API available at http://localhost:8000
+    ```
+
+6. **Dashboard**
+  - Launch the Streamlit dashboard for interactive data exploration and predictions:
+    ```powershell
+    python start_dashboard.py
+    # Dashboard available at http://localhost:8501
+    ```
+
+7. **Testing**
+  - Run all unit and integration tests to ensure code quality:
+    ```powershell
+    pytest
+    ```
+
+8. **Orchestration (Optional)**
+  - Use Prefect for workflow automation and scheduling:
+    ```powershell
+    python test_prefect.py
+    ```
+
+9. **CI/CD (Optional)**
+  - Automated checks and deployments are handled via GitHub Actions (see `.github/workflows/`).
+
+---
+
 ## 🔧 Configuration
 
 All parameters are centralized in `config/config.yaml`:
@@ -228,7 +288,7 @@ Edit this file to change any parameter without modifying code.
 - [x] Utility functions extracted
 - [x] All 6 transformers implemented
 - [x] Requirements file
-- [x] Documentation (README, ROADMAP)
+- [x] Documentation (README)
 
 #### Phase 2: Experiment Tracking ✅
 - [x] MLflow integration
@@ -266,9 +326,9 @@ Edit this file to change any parameter without modifying code.
 - [x] API monitoring
 
 ### 📅 Phase 7: CI/CD
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Advanced monitoring (Evidently AI)
-- [ ] Orchestration (Apache Airflow)
+- [x] CI/CD pipeline (GitHub Actions)
+- [ ] Orch- [ ] Advanced monitoring (Evidently AI)
+estration (Apache Airflow)
 - [ ] Cloud deployment (AWS/Azure/GCP)
 
 ---
@@ -290,22 +350,6 @@ python tests/test_data.py
 ```powershell
 pytest tests/test_api.py -v
 ```
-
----
-
-## 📈 Model Performance
-
-### Current Results (from notebook)
-- **F1-Score**: ~70%+ (weighted)
-- **Baseline (random)**: ~50%
-- **Features**: 8 engineered features
-- **Algorithm**: HDBSCAN clustering
-- **PCA Components**: 4
-
-### Performance Metrics
-- Prediction latency: TBD
-- Throughput: TBD
-- Memory usage: TBD
 
 ---
 
@@ -338,7 +382,7 @@ python start_dashboard.py
 - **Performance Monitoring**: Track API metrics and model performance
 - **CSV Downloads**: Export filtered data for offline analysis
 
-📖 **Full Documentation**: See [PHASE6.5_DASHBOARD_SUMMARY.md](PHASE6.5_DASHBOARD_SUMMARY.md)
+📖 **Full Documentation**: See [docs/archive/PHASE6.5_DASHBOARD_SUMMARY.md](docs/archive/PHASE6.5_DASHBOARD_SUMMARY.md)
 
 ---
 
@@ -384,7 +428,7 @@ print(response.json())
 # {'predicted_label': 1, 'confidence': 0.85, 'user_id': 'test_user', ...}
 ```
 
-📖 **Full Documentation**: See [PHASE6_API_SUMMARY.md](PHASE6_API_SUMMARY.md)
+📖 **Full Documentation**: See [docs/archive/PHASE6_API_SUMMARY.md](docs/archive/PHASE6_API_SUMMARY.md)
 
 ---
 
@@ -421,7 +465,7 @@ python deploy_workflows.py
 - 📊 **Daily Predictions**: Every day at 8 AM
 - 🔍 **Monitoring**: Every 6 hours (auto-retrains if drift detected)
 
-📖 **Full Guide**: See [PREFECT_GUIDE.md](PREFECT_GUIDE.md)
+📖 **Full Guide**: See [docs/archive/PREFECT_GUIDE.md](docs/archive/PREFECT_GUIDE.md)
 
 ---
 
@@ -496,7 +540,6 @@ test: Add unit tests for SpeedTransformer
 - **[docs/usage/USAGE_GUIDE.md](docs/usage/USAGE_GUIDE.md)**: Complete usage guide
 - **[docs/development/MLOPS_ROADMAP.md](docs/development/MLOPS_ROADMAP.md)**: Project architecture & roadmap
 - **[requirements/README.md](requirements/README.md)**: Requirements documentation
-- **[Notebook](notebooks/AAU_Worshop_whosOnBus.ipynb)**: Original research code
 - **Code docstrings**: Every function and class documented
 
 ---
@@ -549,4 +592,3 @@ See **[docs/development/MLOPS_ROADMAP.md](docs/development/MLOPS_ROADMAP.md)** f
 
 **Last Updated**: November 20, 2025  
 **Version**: 0.1.0  
-**Status**: Phase 1 Complete ✅

@@ -36,20 +36,20 @@ services:
     restart: unless-stopped
 
   # Streamlit Dashboard (Optional)
-  dashboard:
-    build: .
-    container_name: bus-classifier-dashboard
-    ports:
-      - "8501:8501"
-    volumes:
-      - ./dashboard:/app/dashboard
-      - ./models:/app/models
-      - ./passengers.csv:/app/passengers.csv
-      - ./bus.csv:/app/bus.csv
-    command: streamlit run dashboard/app.py --server.port=8501 --server.address=0.0.0.0
-    restart: unless-stopped
-    depends_on:
-      - api
+  # dashboard:
+  #   build: .
+  #   container_name: bus-classifier-dashboard
+  #   ports:
+  #     - "8501:8501"
+  #   volumes:
+  #     - ./dashboard:/app/dashboard
+  #     - ./models:/app/models
+  #     - ./passengers.csv:/app/passengers.csv
+  #     - ./bus.csv:/app/bus.csv
+  #   command: streamlit run dashboard/app.py --server.port=8501 --server.address=0.0.0.0
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - api
 
 networks:
   default:
