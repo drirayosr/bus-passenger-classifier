@@ -561,8 +561,8 @@ test: Add unit tests for SpeedTransformer
 
 ## 📧 Contact
 
-**Project Team**: MLOps Learning Initiative  
-**Repository**: Local development
+
+**Contact**: yosr.drira@imt-atlantique.net
 
 ---
 
